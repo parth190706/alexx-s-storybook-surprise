@@ -131,7 +131,7 @@ function WishWheel({ onNext, audio, secret }: SceneProps) {
     </div></div>
     <div className="spin-dots" aria-label={`${spins} of 3 spins used`}>{[0, 1, 2].map((n) => <i key={n} className={n < spins ? "filled" : ""} />)}</div>
     {spins < 3 && <Button className="story-button" onClick={() => spin()}>SPIN {spins ? "AGAIN" : "THE WHEEL"}</Button>}
-    {result && <div className="wish-result reveal"><small>{spins === 3 ? "final wish" : "the wheel chose"}</small><strong>{result}</strong>{spins === 3 && <><p>I hope you always find your way back to yourself.</p><ContinueButton onClick={onNext} /></>}</div>}
+    {(result || spins >= 3) && <div className="wish-result reveal"><small>{spins >= 3 ? "final wish" : "the wheel chose"}</small><strong>{spins >= 3 ? "THE ONE I ACTUALLY WANTED YOU TO GET" : result}</strong>{spins >= 3 && <><p>I hope you always find your way back to yourself.</p><ContinueButton onClick={onNext} /></>}</div>}
   </section>;
 }
 
