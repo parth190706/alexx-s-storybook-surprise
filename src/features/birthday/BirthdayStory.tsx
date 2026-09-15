@@ -64,15 +64,22 @@ function Archery({ onNext, audio, secret }: SceneProps) {
   const [dragging, setDragging] = useState(false);
   const [flying, setFlying] = useState(false);
   const [hit, setHit] = useState(false);
+  const pullRef = useRef(pull);
   const point = (event: ReactPointerEvent) => {
     const box = stageRef.current?.getBoundingClientRect();
     if (!box) return;
-    setPull({ x: Math.max(22, Math.min(115, event.clientX - box.left)), y: Math.max(145, Math.min(310, event.clientY - box.top)) });
+    const next = { x: Math.max(22, Math.min(115, event.clientX - box.left)), y: Math.max(145, Math.min(310, event.clientY - box.top)) };
+    pullRef.current = next;
+    setPull(next);
   };
   const release = () => {
     if (!dragging) return;
     setDragging(false); setFlying(true); audio.play("pluck");
-    window.setTimeout(() => { setHit(true); setFlying(false); audio.play("hit"); }, 650);
+    const strength = 115 - pullRef.current.x;
+    window.setTimeout(() => {
+      setFlying(false);
+      if (strength >= 18) { setHit(true); audio.play("hit"); }
+    }, 650);
   };
   return <section className="story-scene archery-scene">
     <SceneHeading chapter="CHAPTER TWO" title="One Perfect Shot" subtitle="Pull the glowing string and let the arrow go." />
@@ -90,12 +97,13 @@ function Midnight({ onNext, audio, secret }: SceneProps) {
   const faceRef = useRef<HTMLDivElement>(null);
   const [minutes, setMinutes] = useState(0);
   const [done, setDone] = useState(false);
+  const minuteRef = useRef(0);
   const update = (event: ReactPointerEvent) => {
     const box = faceRef.current?.getBoundingClientRect(); if (!box) return;
     const angle = Math.atan2(event.clientY - (box.top + box.height / 2), event.clientX - (box.left + box.width / 2)) * 180 / Math.PI + 90;
-    const normalized = (angle + 360) % 360; const next = Math.round(normalized / 6) % 60; setMinutes(next);
+    const normalized = (angle + 360) % 360; const next = Math.round(normalized / 6) % 60; minuteRef.current = next; setMinutes(next);
   };
-  const check = () => { if (minutes <= 2 || minutes >= 58) { setMinutes(0); setDone(true); audio.play("chime"); } };
+  const check = () => { const value = minuteRef.current; if (value <= 2 || value >= 58) { setMinutes(0); setDone(true); audio.play("chime"); } };
   const night = 1 - Math.min(minutes, 30) / 30;
   return <section className="story-scene midnight-scene" style={{ "--night": night } as React.CSSProperties}>
     <SceneHeading chapter="CHAPTER THREE" title="When the Clock Says Midnight" subtitle="Turn the minute hand until the whole world reaches twelve." />
@@ -112,21 +120,18 @@ function Midnight({ onNext, audio, secret }: SceneProps) {
 
 function WishWheel({ onNext, audio, secret }: SceneProps) {
   const [rotation, setRotation] = useState(0); const [spins, setSpins] = useState(0); const [result, setResult] = useState(""); const drag = useRef<{ x: number; t: number } | null>(null);
-  const spin = (force = 760) => {
-    if (spins >= 3) return;
-    const next = spins + 1;
-    setSpins(next);
+  const spin = (force = 760) => setSpins((current) => {
+    if (current >= 3) return current;
+    const next = current + 1;
     setRotation((r) => r + force + next * 113);
     setResult(next === 3 ? "THE ONE I ACTUALLY WANTED YOU TO GET" : "the wheel is thinking...");
     audio.play("spin");
-    window.setTimeout(() => {
-      if (next < 3) setResult(wishes[(next * 2 + 1) % wishes.length] ?? "A Beautiful Year");
-      audio.play("sparkle");
-    }, 1250);
-  };
+    window.setTimeout(() => { if (next < 3) setResult(wishes[(next * 2 + 1) % wishes.length] ?? "A Beautiful Year"); audio.play("sparkle"); }, 1250);
+    return next;
+  });
   return <section className="story-scene wheel-scene">
     <SceneHeading chapter="CHAPTER FOUR" title="The Wish Wheel" subtitle="Three spins. The wheel has opinions." />
-    <div className="wheel-wrap"><span className="wheel-pointer">▼</span><div className="wish-wheel" style={{ transform: `rotate(${rotation}deg)` }} onPointerDown={(e) => { e.currentTarget.setPointerCapture(e.pointerId); drag.current = { x: e.clientX, t: performance.now() }; }} onPointerUp={(e) => { const start = drag.current; if (start) spin(Math.max(600, Math.abs(e.clientX - start.x) * 9)); drag.current = null; }}>
+    <div className="wheel-wrap"><span className="wheel-pointer">▼</span><div className="wish-wheel" style={{ transform: `rotate(${rotation}deg)` }} onPointerDown={(e) => { e.currentTarget.setPointerCapture(e.pointerId); drag.current = { x: e.clientX, t: performance.now() }; }} onPointerUp={(e) => { const start = drag.current; if (start) { const distance = Math.abs(e.clientX - start.x); const elapsed = Math.max(16, performance.now() - start.t); spin(Math.max(600, Math.min(1600, distance * 8 + (distance / elapsed) * 300))); } drag.current = null; }}>
       {wishes.map((wish, i) => <span key={wish} style={{ transform: `rotate(${i * 60}deg) translateY(-39%)` }}>{wish}</span>)}<button aria-label="Wheel secret" onClick={() => secret("rigged? only emotionally.")}>✦</button>
     </div></div>
     <div className="spin-dots" aria-label={`${spins} of 3 spins used`}>{[0, 1, 2].map((n) => <i key={n} className={n < spins ? "filled" : ""} />)}</div>
