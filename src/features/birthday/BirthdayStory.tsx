@@ -112,7 +112,7 @@ function Midnight({ onNext, audio, secret }: SceneProps) {
 
 function WishWheel({ onNext, audio, secret }: SceneProps) {
   const [rotation, setRotation] = useState(0); const [spins, setSpins] = useState(0); const [result, setResult] = useState(""); const drag = useRef<{ x: number; t: number } | null>(null);
-  const spin = (force = 760) => { if (spins >= 3) return; const next = spins + 1; setSpins(next); setRotation((r) => r + force + next * 113); setResult(""); audio.play("spin"); window.setTimeout(() => { setResult(next === 3 ? "THE ONE I ACTUALLY WANTED YOU TO GET" : wishes[(next * 2 + 1) % wishes.length] ?? wishes[0]); audio.play("sparkle"); }, 1250); };
+  const spin = (force = 760) => { if (spins >= 3) return; const next = spins + 1; setSpins(next); setRotation((r) => r + force + next * 113); setResult(""); audio.play("spin"); window.setTimeout(() => { setResult(next === 3 ? "THE ONE I ACTUALLY WANTED YOU TO GET" : (wishes[(next * 2 + 1) % wishes.length] ?? "A Beautiful Year")); audio.play("sparkle"); }, 1250); };
   return <section className="story-scene wheel-scene">
     <SceneHeading chapter="CHAPTER FOUR" title="The Wish Wheel" subtitle="Three spins. The wheel has opinions." />
     <div className="wheel-wrap"><span className="wheel-pointer">▼</span><div className="wish-wheel" style={{ transform: `rotate(${rotation}deg)` }} onPointerDown={(e) => { e.currentTarget.setPointerCapture(e.pointerId); drag.current = { x: e.clientX, t: performance.now() }; }} onPointerUp={(e) => { const start = drag.current; if (start) spin(Math.max(600, Math.abs(e.clientX - start.x) * 9)); drag.current = null; }}>
